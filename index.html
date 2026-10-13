@@ -317,12 +317,12 @@
       <div id="hud">
         <div id="bondBox">❤️ <span id="bondVal">0</span></div>
         <div id="recipeBox">
-          <div id="recipeTop">
-            <span id="product">🎂</span>
-            <span id="productName">奶油蛋糕</span>
+            <div id="recipeTop">
+              <span id="product">❓</span>
+              <span id="productName">今日菜單？？？</span>
+            </div>
+            <div id="needItems"></div>
           </div>
-          <div id="needItems"></div>
-        </div>
       </div>
     </div>
   </div>
@@ -339,10 +339,10 @@
           <div class="heart">💗</div>
         </div>
       </div>
-      <div class="bubble"><span id="popupCheer">今天的你超棒！</span></div>
-      <div id="popupProduct">🎂</div>
-      <div id="popupName">奶油蛋糕</div>
-      <div id="popupSub">完成啦！終於揭曉今天的組合！</div>
+      <div class="bubble"><span id="popupCheer">今天我們一起吃...吧～</span></div>
+      <div id="popupProduct" style="display:none">🎂</div>
+      <div id="popupName" style="display:none">奶油蛋糕</div>
+      <div id="popupSub">終於揭曉今天的小糬菜單！</div>
       <button id="feedBtn">餵給小糬 ❤️</button>
     </div>
   </div>
@@ -557,8 +557,8 @@
 
   function updateHUD() {
     bondVal.textContent = bond;
-    productEl.textContent = recipe.product;
-    productNameEl.textContent = recipe.name;
+    productEl.textContent = '❓';
+    productNameEl.textContent = '今日菜單？？？';
     needEl.innerHTML = '';
     recipe.items.forEach(function (it) {
       var s = document.createElement('span');
@@ -632,17 +632,32 @@
   }
 
   function showPopup() {
-    popupProduct.textContent = recipe.product;
-    popupName.textContent = recipe.name;
-    popupCheer.textContent = rand(CHEERS) + '。今天我們一起吃「' + recipe.name + '」吧～';
-    popupFace.className = 'body f-' + baseStateForBond();
-    feedBtn.disabled = false;
-    feedBtn.textContent = '餵給小糬 ❤️';
-    popupProduct.style.transform = '';
-    popupProduct.style.opacity = '';
     popup.classList.remove('hidden');
-    phase = 'popup';
+    phase = 'revealing';
+    feedBtn.disabled = true;
+    popupProduct.style.display = 'none';
+    popupName.style.display = 'none';
+    popupFace.className = 'body f-' + baseStateForBond();
+    popupCheer.textContent = '今天我們一起吃「......」？';
     hideHint();
+
+    setTimeout(function () {
+      popupCheer.textContent = '今天我們一起吃「' + recipe.name + '」吧～';
+      popupProduct.textContent = recipe.product;
+      popupName.textContent = recipe.name;
+      popupProduct.style.display = '';
+      popupName.style.display = '';
+      popupProduct.style.transform = 'scale(.8)';
+      popupProduct.style.opacity = '0';
+      requestAnimationFrame(function () {
+        popupProduct.style.transition = 'transform .4s cubic-bezier(.2,1.4,.5,1), opacity .4s';
+        popupProduct.style.transform = 'scale(1)';
+        popupProduct.style.opacity = '1';
+      });
+      feedBtn.disabled = false;
+      feedBtn.textContent = '餵給小糬 ❤️';
+      phase = 'popup';
+    }, 900);
   }
 
   function feed() {
