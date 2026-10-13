@@ -631,33 +631,38 @@
     }
   }
 
+  function revealDish() {
+    if (phase !== 'revealing') return;
+    popupCheer.textContent = '今天我們一起吃「' + recipe.name + '」吧～ ' + rand(CHEERS);
+    popupProduct.textContent = recipe.product;
+    popupName.textContent = recipe.name;
+    popupProduct.style.display = '';
+    popupName.style.display = '';
+    popupProduct.style.transform = 'scale(.8)';
+    popupProduct.style.opacity = '0';
+    requestAnimationFrame(function () {
+      popupProduct.style.transition = 'transform .4s cubic-bezier(.2,1.4,.5,1), opacity .4s';
+      popupProduct.style.transform = 'scale(1)';
+      popupProduct.style.opacity = '1';
+    });
+    feedBtn.disabled = false;
+    feedBtn.textContent = '餵給小糬 ❤️';
+    phase = 'popup';
+    popup.removeEventListener('click', revealDish);
+  }
+
   function showPopup() {
     popup.classList.remove('hidden');
     phase = 'revealing';
     feedBtn.disabled = true;
     popupProduct.style.display = 'none';
     popupName.style.display = 'none';
+    popupProduct.style.transform = '';
+    popupProduct.style.opacity = '';
     popupFace.className = 'body f-' + baseStateForBond();
-    popupCheer.textContent = '今天我們一起吃「......」？';
+    popupCheer.textContent = '今天我們一起吃「......」？（點一下揭曉）';
     hideHint();
-
-    setTimeout(function () {
-      popupCheer.textContent = '今天我們一起吃「' + recipe.name + '」吧～';
-      popupProduct.textContent = recipe.product;
-      popupName.textContent = recipe.name;
-      popupProduct.style.display = '';
-      popupName.style.display = '';
-      popupProduct.style.transform = 'scale(.8)';
-      popupProduct.style.opacity = '0';
-      requestAnimationFrame(function () {
-        popupProduct.style.transition = 'transform .4s cubic-bezier(.2,1.4,.5,1), opacity .4s';
-        popupProduct.style.transform = 'scale(1)';
-        popupProduct.style.opacity = '1';
-      });
-      feedBtn.disabled = false;
-      feedBtn.textContent = '餵給小糬 ❤️';
-      phase = 'popup';
-    }, 900);
+    popup.addEventListener('click', revealDish, { once: true });
   }
 
   function feed() {
