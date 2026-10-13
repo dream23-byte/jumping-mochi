@@ -667,7 +667,6 @@
     feedBtn.textContent = '餵給小糬 ❤️';
     tempPopupFace('joy', 1100);
     phase = 'popup';
-    popup.removeEventListener('click', revealDish);
   }
 
   function showPopup() {
@@ -681,25 +680,37 @@
     popupFace.className = 'body f-' + baseStateForBond();
     popupCheer.textContent = '今天我們一起吃「......」？（點一下揭曉）';
     hideHint();
-    popup.addEventListener('click', revealDish, { once: true });
   }
 
   function feed() {
     if (phase !== 'popup') return;
     bond++;
     bondVal.textContent = bond;
-    tempPopupFace('love', 1000);
+    tempPopupFace('love', 1400);
     popupCheer.textContent = rand(FEED_REPLIES);
     popupProduct.style.transform = 'scale(1.4)';
     popupProduct.style.opacity = '0.15';
-    feedBtn.disabled = true;
-    feedBtn.textContent = '謝謝你 ❤️';
-    setTimeout(function () {
-      popup.classList.add('hidden');
-      popupProduct.style.transform = '';
-      popupProduct.style.opacity = '';
-      newRound();
-    }, 1000);
+    feedBtn.textContent = '下一道菜 ▶';
+    phase = 'fed';
+  }
+
+  function nextRound() {
+    if (phase !== 'fed') return;
+    popupProduct.style.transform = '';
+    popupProduct.style.opacity = '';
+    popup.classList.add('hidden');
+    newRound();
+  }
+
+  function onFeedBtn() {
+    if (phase === 'popup') feed();
+    else if (phase === 'fed') nextRound();
+  }
+
+  function onPopupClick(e) {
+    if (e.target.closest && e.target.closest('#feedBtn')) return;
+    if (phase === 'revealing') revealDish();
+    else if (phase === 'fed') nextRound();
   }
 
   function springStep(dt) {
@@ -773,7 +784,8 @@
     e.preventDefault();
     jump();
   });
-  feedBtn.addEventListener('click', feed);
+  feedBtn.addEventListener('click', onFeedBtn);
+  popup.addEventListener('click', onPopupClick);
 
   var resizeTimer = 0;
   window.addEventListener('resize', function () {
