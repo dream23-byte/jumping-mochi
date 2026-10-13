@@ -560,20 +560,12 @@
     productEl.textContent = '❓';
     productNameEl.textContent = '今日餐點？？？';
     needEl.innerHTML = '';
-    var s = document.createElement('span');
-    s.className = 'need-item';
-    s.style.fontSize = '11px';
-    s.style.filter = 'none';
-    s.style.opacity = '.7';
-    if (collected.length >= recipe.items.length) {
-      s.textContent = '食材齊了！';
-      s.style.color = '#ff5c8a';
-      s.style.fontWeight = '800';
-      s.style.opacity = '1';
-    } else {
-      s.textContent = '食材 ' + collected.length + '/' + recipe.items.length;
-    }
-    needEl.appendChild(s);
+    recipe.items.forEach(function (it) {
+      var s = document.createElement('span');
+      s.className = 'need-item' + (collected.indexOf(it) >= 0 ? ' done' : '');
+      s.textContent = it;
+      needEl.appendChild(s);
+    });
   }
 
   function showHint(text, autoHideMs) {
