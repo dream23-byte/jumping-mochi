@@ -319,7 +319,7 @@
         <div id="recipeBox">
             <div id="recipeTop">
               <span id="product">❓</span>
-              <span id="productName">今日菜單？？？</span>
+              <span id="productName">今日餐點？？？</span>
             </div>
             <div id="needItems"></div>
           </div>
@@ -558,14 +558,22 @@
   function updateHUD() {
     bondVal.textContent = bond;
     productEl.textContent = '❓';
-    productNameEl.textContent = '今日菜單？？？';
+    productNameEl.textContent = '今日餐點？？？';
     needEl.innerHTML = '';
-    recipe.items.forEach(function (it) {
-      var s = document.createElement('span');
-      s.className = 'need-item' + (collected.indexOf(it) >= 0 ? ' done' : '');
-      s.textContent = it;
-      needEl.appendChild(s);
-    });
+    var s = document.createElement('span');
+    s.className = 'need-item';
+    s.style.fontSize = '11px';
+    s.style.filter = 'none';
+    s.style.opacity = '.7';
+    if (collected.length >= recipe.items.length) {
+      s.textContent = '食材齊了！';
+      s.style.color = '#ff5c8a';
+      s.style.fontWeight = '800';
+      s.style.opacity = '1';
+    } else {
+      s.textContent = '食材 ' + collected.length + '/' + recipe.items.length;
+    }
+    needEl.appendChild(s);
   }
 
   function showHint(text, autoHideMs) {
