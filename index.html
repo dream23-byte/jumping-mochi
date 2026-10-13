@@ -669,6 +669,7 @@
     if (phase !== 'popup') return;
     bond++;
     bondVal.textContent = bond;
+    tempFace('joy', 650);
     popupFace.className = 'body f-' + baseStateForBond();
     popupCheer.textContent = rand(FEED_REPLIES);
     popupProduct.style.transform = 'scale(1.4)';
