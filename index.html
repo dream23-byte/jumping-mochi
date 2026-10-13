@@ -648,7 +648,6 @@
     feedBtn.disabled = false;
     feedBtn.textContent = '餵給小糬 ❤️';
     popupFace.className = 'body f-joy';
-    tempUntil = now() + 750;
     phase = 'popup';
     popup.removeEventListener('click', revealDish);
   }
@@ -664,7 +663,6 @@
     popupFace.className = 'body f-' + baseStateForBond();
     popupCheer.textContent = '今天我們一起吃「......」？（點一下揭曉）';
     popupFace.className = 'body f-joy';
-    tempUntil = now() + 400;
     hideHint();
     popup.addEventListener('click', revealDish, { once: true });
   }
@@ -674,7 +672,6 @@
     bond++;
     bondVal.textContent = bond;
     popupFace.className = 'body f-love';
-    tempUntil = now() + 650;
     popupCheer.textContent = rand(FEED_REPLIES);
     popupProduct.style.transform = 'scale(1.4)';
     popupProduct.style.opacity = '0.15';
