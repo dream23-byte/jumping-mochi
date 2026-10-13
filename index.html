@@ -342,7 +342,7 @@
       <div class="bubble"><span id="popupCheer">今天的你超棒！</span></div>
       <div id="popupProduct">🎂</div>
       <div id="popupName">奶油蛋糕</div>
-      <div id="popupSub">完成啦！收集的食材變成新東西了</div>
+      <div id="popupSub">完成啦！終於揭曉今天的組合！</div>
       <button id="feedBtn">餵給小糬 ❤️</button>
     </div>
   </div>
@@ -634,7 +634,7 @@
   function showPopup() {
     popupProduct.textContent = recipe.product;
     popupName.textContent = recipe.name;
-    popupCheer.textContent = rand(CHEERS);
+    popupCheer.textContent = rand(CHEERS) + '今天我們一起吃「' + recipe.name + '」吧～';
     popupFace.className = 'body f-' + baseStateForBond();
     feedBtn.disabled = false;
     feedBtn.textContent = '餵給小糬 ❤️';
