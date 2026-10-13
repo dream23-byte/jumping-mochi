@@ -648,7 +648,6 @@
     feedBtn.disabled = false;
     feedBtn.textContent = '餵給小糬 ❤️';
     popupFace.className = 'body f-joy';
-    setTimeout(function() { popupFace.className = 'body f-joy'; }, 10);
     phase = 'popup';
     popup.removeEventListener('click', revealDish);
   }
@@ -661,11 +660,10 @@
     popupName.style.display = 'none';
     popupProduct.style.transform = '';
     popupProduct.style.opacity = '';
+    popupFace.className = 'body f-joy';
     popupCheer.textContent = '今天我們一起吃「......」？（點一下揭曉）';
     hideHint();
     popup.addEventListener('click', revealDish, { once: true });
-    popupFace.className = 'body f-joy';
-    setTimeout(function() { popupFace.className = 'body f-joy'; }, 0);
   }
 
   function feed() {
