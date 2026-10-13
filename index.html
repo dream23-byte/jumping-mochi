@@ -660,11 +660,11 @@
     popupName.style.display = 'none';
     popupProduct.style.transform = '';
     popupProduct.style.opacity = '';
-    popupFace.className = 'body f-joy';
     popupCheer.textContent = '今天我們一起吃「......」？（點一下揭曉）';
     hideHint();
     popup.addEventListener('click', revealDish, { once: true });
-    setTimeout(function() { popupFace.className = 'body f-joy'; }, 10);
+    popupFace.className = 'body f-joy';
+    setTimeout(function() { popupFace.className = 'body f-joy'; }, 20);
   }
 
   function feed() {
