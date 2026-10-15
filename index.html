@@ -664,6 +664,7 @@
       popupProduct.style.opacity = '1';
     });
     feedBtn.disabled = false;
+    feedBtn.style.display = '';
     feedBtn.textContent = '餵給小糬 ❤️';
     tempPopupFace('joy', 1100);
     phase = 'popup';
@@ -673,6 +674,7 @@
     popup.classList.remove('hidden');
     phase = 'revealing';
     feedBtn.disabled = true;
+    feedBtn.style.display = 'none';
     popupProduct.style.display = 'none';
     popupName.style.display = 'none';
     popupProduct.style.transform = '';
