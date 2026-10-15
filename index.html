@@ -24,14 +24,16 @@
     color: #ff8fab; margin-bottom: 8px; text-shadow: 0 2px 0 #fff;
   }
   #title span { font-size: 22px; }
-  #menuLink {
+  #menuBtn {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    font-family: inherit;
     font-size: clamp(12px, 2.2vw, 13px);
     font-weight: 700;
     letter-spacing: .5px;
-    text-decoration: none;
+    cursor: pointer;
+    border: none;
     color: #7f5f66;
     background: #ffffffcc;
     padding: 4px 8px 4px 6px;
@@ -43,8 +45,59 @@
     vertical-align: middle;
     white-space: nowrap;
   }
-  #menuLink:hover { transform: translateY(-1px); color: #e2568a; box-shadow: 0 10px 30px -16px rgba(90,70,80,.5), inset 0 -2px 0 rgba(255,255,255,.95); }
-  #menuLink:active { transform: translateY(1px); }
+  #menuBtn:hover { transform: translateY(-1px); color: #e2568a; box-shadow: 0 10px 30px -16px rgba(90,70,80,.5), inset 0 -2px 0 rgba(255,255,255,.95); }
+  #menuBtn:active { transform: translateY(1px); }
+
+  /* ---------- recipe drawer (食譜圖鑑) ---------- */
+  #drawerMask {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(90, 70, 80, .38); backdrop-filter: blur(3px);
+    opacity: 0; visibility: hidden; transition: opacity .25s;
+  }
+  #drawerMask.open { opacity: 1; visibility: visible; }
+  #drawer {
+    position: fixed; top: 0; right: 0; height: 100%; z-index: 61;
+    width: min(370px, 88vw);
+    display: flex; flex-direction: column;
+    padding: 16px 14px 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #fff6f9 100%);
+    box-shadow: -16px 0 40px rgba(140, 90, 110, .28), inset 4px 0 0 #fff0f5;
+    transform: translateX(103%);
+    transition: transform .32s cubic-bezier(.3, 1.2, .5, 1);
+  }
+  #drawer.open { transform: translateX(0); }
+  .drawer-head { display: flex; align-items: center; gap: 8px; padding: 2px 2px 12px; border-bottom: 2px dashed #ffe0ec; }
+  .drawer-title { font-size: 16px; font-weight: 900; letter-spacing: 1px; color: #ff8fab; text-shadow: 0 1px 0 #fff; }
+  .drawer-progress { margin-left: auto; font-size: 12px; font-weight: 700; color: #9f7f86; background: #fff0f5; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .drawer-progress strong { color: #ff5c8a; }
+  #drawerClose {
+    border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 14px;
+    width: 28px; height: 28px; border-radius: 50%; line-height: 1;
+    background: #fff0f5; color: #ff7aa5; box-shadow: 0 3px 0 #ffc6d8;
+    transition: transform .1s, box-shadow .1s;
+  }
+  #drawerClose:active { transform: translateY(2px); box-shadow: 0 1px 0 #ffc6d8; }
+  .drawer-hint { font-size: 11px; color: #b9a3aa; padding: 8px 2px 4px; text-align: center; }
+  .drawer-list {
+    flex: 1; margin-top: 10px; overflow-y: auto;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    padding: 2px 4px 8px 2px;
+  }
+  .dish {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    background: #fff; border: 2px solid #fff0f6; border-radius: 16px;
+    padding: 10px 6px 9px; text-align: center;
+    box-shadow: 0 8px 22px -18px rgba(90,70,80,.5), inset 0 -3px 0 #fff6f9;
+  }
+  .dish .dish-product { font-size: 30px; line-height: 1; filter: drop-shadow(0 4px 6px rgba(200,150,120,.28)); }
+  .dish .dish-name { font-size: 12px; font-weight: 800; color: #b07a3c; line-height: 1.25; }
+  .dish .dish-items { display: flex; gap: 3px; }
+  .dish .dish-items span { font-size: 14px; line-height: 1; }
+  .dish.locked { background: #fbfbfd; border-color: #f1eef3; box-shadow: 0 6px 18px -18px rgba(90,70,80,.4); }
+  .dish.locked .dish-product { filter: grayscale(1); opacity: .3; }
+  .dish.locked .dish-name { color: #cdc6cc; letter-spacing: 2px; }
+  .dish.locked .dish-items span { filter: grayscale(1); opacity: .3; }
+  .dish.just { animation: giftPop .5s cubic-bezier(.2, 1.4, .5, 1); }
 
   #stage {
     position: relative;
@@ -321,7 +374,7 @@
 </head>
 <body>
   <div id="app">
-    <div id="title"><span>🍡</span> 跳跳小糬 <span>🍡</span> <a id="menuLink" href="menu.html" aria-label="前往食譜圖鑑">📖 食譜圖鑑</a></div>
+    <div id="title"><span>🍡</span> 跳跳小糬 <span>🍡</span> <button id="menuBtn" type="button" aria-label="開啟食譜圖鑑">📖 食譜圖鑑</button></div>
     <div id="stage">
       <div class="cloud c1"></div>
       <div class="cloud c2"></div>
@@ -375,6 +428,17 @@
     </div>
   </div>
 
+  <div id="drawerMask"></div>
+  <aside id="drawer" aria-label="食譜圖鑑" aria-hidden="true">
+    <div class="drawer-head">
+      <span class="drawer-title">📖 食譜圖鑑</span>
+      <span class="drawer-progress">已解鎖 <strong id="unlockCount">0</strong> / <strong id="unlockTotal">32</strong></span>
+      <button id="drawerClose" type="button" aria-label="關閉食譜圖鑑">✕</button>
+    </div>
+    <div class="drawer-list" id="drawerList"></div>
+    <div class="drawer-hint">餵小糬吃過的餐點才會永久解鎖哦～</div>
+  </aside>
+
 <script>
 (function () {
   'use strict';
@@ -395,6 +459,42 @@
   var popupCheer = document.getElementById('popupCheer');
   var popupFace = document.getElementById('popupFace');
   var feedBtn = document.getElementById('feedBtn');
+
+  var menuBtn = document.getElementById('menuBtn');
+  var drawer = document.getElementById('drawer');
+  var drawerMask = document.getElementById('drawerMask');
+  var drawerList = document.getElementById('drawerList');
+  var drawerClose = document.getElementById('drawerClose');
+  var unlockCountEl = document.getElementById('unlockCount');
+  var unlockTotalEl = document.getElementById('unlockTotal');
+
+  var UNLOCK_KEY = 'mochi_unlocked_v1';
+  var unlocked = loadUnlocked();
+
+  function loadUnlocked() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(UNLOCK_KEY) || '[]');
+      var map = {};
+      if (Object.prototype.toString.call(arr) === '[object Array]') {
+        arr.forEach(function (name) { if (name) map[name] = true; });
+      }
+      return map;
+    } catch (e) { return {}; }
+  }
+
+  function saveUnlocked() {
+    try {
+      var arr = [];
+      for (var k in unlocked) { if (unlocked.hasOwnProperty(k)) arr.push(k); }
+      localStorage.setItem(UNLOCK_KEY, JSON.stringify(arr));
+    } catch (e) { }
+  }
+
+  function unlockedCount() {
+    var n = 0;
+    for (var k in unlocked) { if (unlocked.hasOwnProperty(k)) n++; }
+    return n;
+  }
 
   var RECIPES = [
     { items: ['🍓', '🥛', '🍯'], product: '🍧', name: '雲朵草莓雪酪' },
@@ -622,6 +722,56 @@
     if (hintTimer) { clearTimeout(hintTimer); hintTimer = 0; }
   }
 
+  function renderDrawer() {
+    drawerList.innerHTML = '';
+    var count = 0;
+    RECIPES.forEach(function (r) {
+      var on = !!unlocked[r.name];
+      if (on) count++;
+      var card = document.createElement('div');
+      card.className = 'dish' + (on ? '' : ' locked');
+      var prod = document.createElement('div');
+      prod.className = 'dish-product';
+      prod.textContent = on ? r.product : '❓';
+      var nm = document.createElement('div');
+      nm.className = 'dish-name';
+      nm.textContent = on ? r.name : '？？？';
+      var its = document.createElement('div');
+      its.className = 'dish-items';
+      r.items.forEach(function (it) {
+        var s = document.createElement('span');
+        s.textContent = on ? it : '?';
+        its.appendChild(s);
+      });
+      card.appendChild(prod);
+      card.appendChild(nm);
+      card.appendChild(its);
+      drawerList.appendChild(card);
+    });
+    unlockCountEl.textContent = count;
+    unlockTotalEl.textContent = RECIPES.length;
+  }
+
+  function openDrawer() {
+    renderDrawer();
+    drawer.classList.add('open');
+    drawerMask.classList.add('open');
+    drawer.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    drawerMask.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+  }
+
+  function unlockDish(name) {
+    if (!name || unlocked[name]) return;
+    unlocked[name] = true;
+    saveUnlocked();
+    if (drawer.classList.contains('open')) renderDrawer();
+  }
+
   function newRound() {
     recipe = rand(RECIPES);
     collected = [];
@@ -718,6 +868,7 @@
     popupProduct.style.transform = 'scale(1.4)';
     popupProduct.style.opacity = '0.15';
     feedBtn.textContent = '下一道菜 ▶';
+    unlockDish(recipe.name);
     phase = 'fed';
   }
 
@@ -813,6 +964,13 @@
   });
   feedBtn.addEventListener('click', onFeedBtn);
   popup.addEventListener('click', onPopupClick);
+
+  menuBtn.addEventListener('click', openDrawer);
+  drawerClose.addEventListener('click', closeDrawer);
+  drawerMask.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeDrawer();
+  });
 
   var resizeTimer = 0;
   window.addEventListener('resize', function () {
