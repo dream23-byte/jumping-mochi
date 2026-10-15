@@ -78,6 +78,19 @@
   }
   #drawerClose:active { transform: translateY(2px); box-shadow: 0 1px 0 #ffc6d8; }
   .drawer-hint { font-size: 11px; color: #b9a3aa; padding: 8px 2px 4px; text-align: center; }
+  .drawer-foot { padding: 8px 2px 2px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  #resetBtn {
+    border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 12px;
+    color: #9f7f86; background: #fff; padding: 8px 14px; border-radius: 999px;
+    box-shadow: 0 3px 0 #eadfe4, inset 0 0 0 1px #f3eaee;
+    transition: transform .1s, box-shadow .1s, color .15s, background .15s;
+  }
+  #resetBtn:active { transform: translateY(2px); box-shadow: 0 1px 0 #eadfe4, inset 0 0 0 1px #f3eaee; }
+  #resetBtn.confirm {
+    color: #fff; background: linear-gradient(180deg, #ff9dbb 0%, #ff7aa5 100%);
+    box-shadow: 0 3px 0 #e2568a;
+  }
+  #resetBtn.confirm:active { box-shadow: 0 1px 0 #e2568a; }
   .drawer-list {
     flex: 1; margin-top: 10px; overflow-y: auto;
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
@@ -435,7 +448,10 @@
       <button id="drawerClose" type="button" aria-label="關閉食譜圖鑑">✕</button>
     </div>
     <div class="drawer-list" id="drawerList"></div>
-    <div class="drawer-hint">餵小糬吃過的餐點才會永久解鎖哦～</div>
+    <div class="drawer-foot">
+      <button id="resetBtn" type="button">🗑️ 重置收藏與親密度</button>
+      <div class="drawer-hint">餵小糬吃過的餐點才會永久解鎖哦～</div>
+    </div>
   </aside>
 
 <script>
@@ -466,6 +482,7 @@
   var drawerClose = document.getElementById('drawerClose');
   var unlockCountEl = document.getElementById('unlockCount');
   var unlockTotalEl = document.getElementById('unlockTotal');
+  var resetBtn = document.getElementById('resetBtn');
 
   var UNLOCK_KEY = 'mochi_unlocked_v1';
   var unlocked = loadUnlocked();
@@ -785,6 +802,41 @@
     if (drawer.classList.contains('open')) renderDrawer();
   }
 
+  var resetArmed = false;
+  var resetTimer = 0;
+
+  function disarmReset() {
+    resetArmed = false;
+    resetBtn.classList.remove('confirm');
+    resetBtn.textContent = '🗑️ 重置收藏與親密度';
+    if (resetTimer) { clearTimeout(resetTimer); resetTimer = 0; }
+  }
+
+  function doReset() {
+    try {
+      localStorage.removeItem(UNLOCK_KEY);
+      localStorage.removeItem(BOND_KEY);
+    } catch (e) { }
+    unlocked = {};
+    bond = 0;
+    bondVal.textContent = bond;
+    setFace(baseStateForBond());
+    renderDrawer();
+  }
+
+  function onResetClick() {
+    if (!resetArmed) {
+      resetArmed = true;
+      resetBtn.classList.add('confirm');
+      resetBtn.textContent = '⚠️ 確定要重置？再按一次';
+      if (resetTimer) clearTimeout(resetTimer);
+      resetTimer = setTimeout(disarmReset, 3500);
+      return;
+    }
+    disarmReset();
+    doReset();
+  }
+
   function newRound() {
     recipe = rand(RECIPES);
     collected = [];
@@ -982,6 +1034,7 @@
   menuBtn.addEventListener('click', openDrawer);
   drawerClose.addEventListener('click', closeDrawer);
   drawerMask.addEventListener('click', closeDrawer);
+  resetBtn.addEventListener('click', onResetClick);
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeDrawer();
   });
