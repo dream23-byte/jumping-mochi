@@ -495,6 +495,20 @@
     return n;
   }
 
+  var BOND_KEY = 'mochi_bond_v1';
+
+  function loadBond() {
+    try {
+      var n = parseInt(localStorage.getItem(BOND_KEY), 10);
+      if (!isFinite(n) || isNaN(n) || n < 0) return 0;
+      return n;
+    } catch (e) { return 0; }
+  }
+
+  function saveBond() {
+    try { localStorage.setItem(BOND_KEY, String(bond)); } catch (e) { }
+  }
+
   var RECIPES = [
     { items: ['🍓', '🥛', '🍯'], product: '🍧', name: '雲朵草莓雪酪' },
     { items: ['🍵', '🥛', '🍡'], product: '🍵', name: '月光抹茶糬糬拿鐵' },
@@ -581,7 +595,7 @@
   var platforms = [];
   var recipe = null;
   var collected = [];
-  var bond = 0;
+  var bond = loadBond();
   var phase = 'playing';
   var lastTime = 0;
   var hintTimer = 0;
@@ -862,6 +876,7 @@
     if (phase !== 'popup') return;
     bond++;
     bondVal.textContent = bond;
+    saveBond();
     tempPopupFace('love', 1400);
     popupCheer.textContent = rand(FEED_REPLIES);
     popupProduct.style.transform = 'scale(1.4)';
