@@ -970,16 +970,14 @@
 
     dishDetail.classList.remove('hidden');
     dishDetail.setAttribute('aria-hidden', 'false');
-    if (unlocked[r.name] && !newSet[r.name]) {
-      // already cleared? no, just render
-    }
     if (unlocked[r.name] && newSet[r.name]) {
       newSet[r.name] = false;
       saveNewSet();
-      setTimeout(function(){ renderDrawer(); }, 50);
-    } else {
-      renderDrawer();
     }
+    dishDetail.classList.remove('hidden');
+    dishDetail.setAttribute('aria-hidden', 'false');
+    renderDrawer();
+  }
   }
 
   function closeDishDetail() {
