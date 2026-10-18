@@ -110,6 +110,20 @@
   .dish.locked .dish-product { filter: grayscale(1); opacity: .3; }
   .dish.locked .dish-name { color: #cdc6cc; letter-spacing: 2px; }
   .dish.locked .dish-items span { filter: grayscale(1); opacity: .3; }
+  .dish.clickable { cursor: pointer; transition: transform .12s, box-shadow .12s, border-color .12s; }
+  .dish.clickable:hover {
+    transform: translateY(-2px); border-color: #ffd6e5;
+    box-shadow: 0 12px 24px -16px rgba(200,110,150,.6), inset 0 -3px 0 #fff6f9;
+  }
+  .dish.clickable:active { transform: translateY(1px); }
+  .dish.shake { animation: dishShake .4s; }
+  @keyframes dishShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+  }
 
   #stage {
     position: relative;
@@ -382,6 +396,51 @@
   #feedBtn:hover:not(:disabled) { filter: brightness(1.05); }
   #feedBtn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 #e2568a; }
   #feedBtn:disabled { filter: grayscale(.25) brightness(.98); cursor: default; }
+
+  /* ---------- dish detail (食譜說明卡) ---------- */
+  #dishDetail {
+    position: fixed; inset: 0; z-index: 70;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    background: rgba(90, 70, 80, .42); backdrop-filter: blur(3px);
+    transition: opacity .25s;
+  }
+  #dishDetail.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  .dd-card {
+    position: relative;
+    width: min(330px, 88vw); max-height: 84vh; overflow-y: auto;
+    background: linear-gradient(180deg, #ffffff 0%, #fff6f9 100%);
+    border-radius: 26px; padding: 24px 20px 20px; text-align: center;
+    box-shadow: 0 24px 50px rgba(140, 90, 110, .35), inset 0 0 0 4px #fff0f5;
+    animation: popIn .32s cubic-bezier(.2, 1.3, .5, 1);
+  }
+  #ddClose {
+    position: absolute; top: 12px; right: 12px;
+    border: none; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 14px;
+    width: 28px; height: 28px; border-radius: 50%; line-height: 1;
+    background: #fff0f5; color: #ff7aa5; box-shadow: 0 3px 0 #ffc6d8;
+    transition: transform .1s, box-shadow .1s;
+  }
+  #ddClose:active { transform: translateY(2px); box-shadow: 0 1px 0 #ffc6d8; }
+  .dd-product {
+    font-size: 58px; line-height: 1;
+    filter: drop-shadow(0 8px 10px rgba(200, 150, 120, .35));
+    animation: giftPop .5s cubic-bezier(.2, 1.4, .5, 1);
+  }
+  .dd-name { font-size: 18px; font-weight: 900; color: #b07a3c; margin: 8px 0 2px; }
+  .dd-sub { font-size: 11px; color: #c3aeb5; margin-bottom: 12px; }
+  .dd-sec-title { font-size: 12px; font-weight: 800; color: #ff8fab; text-align: left; margin: 12px 2px 6px; }
+  .dd-ings { display: flex; flex-direction: column; gap: 6px; }
+  .dd-ing {
+    display: flex; align-items: center; gap: 9px;
+    background: #fff; border: 2px solid #fff0f6; border-radius: 12px; padding: 7px 11px;
+  }
+  .dd-ing-emoji { font-size: 20px; line-height: 1; }
+  .dd-ing-name { font-size: 13px; font-weight: 700; color: #8a6b73; }
+  .dd-desc {
+    font-size: 13px; line-height: 1.75; color: #8a6b73; text-align: left;
+    background: #fff; border: 2px dashed #ffe0ec; border-radius: 14px; padding: 11px 13px;
+  }
 </style>
 </head>
 <body>
@@ -454,6 +513,19 @@
     </div>
   </aside>
 
+  <div id="dishDetail" class="hidden" aria-hidden="true">
+    <div class="dd-card" role="dialog" aria-modal="true" aria-labelledby="ddName">
+      <button id="ddClose" type="button" aria-label="關閉食譜說明">✕</button>
+      <div class="dd-product" id="ddProduct">🍧</div>
+      <div class="dd-name" id="ddName">雲朵草莓雪酪</div>
+      <div class="dd-sub">小糬的食譜卡 · 已解鎖 ❤️</div>
+      <div class="dd-sec-title">🧺 需要食材</div>
+      <div class="dd-ings" id="ddIngs"></div>
+      <div class="dd-sec-title">📝 小糬的說明</div>
+      <div class="dd-desc" id="ddDesc"></div>
+    </div>
+  </div>
+
 <script>
 (function () {
   'use strict';
@@ -483,6 +555,16 @@
   var unlockCountEl = document.getElementById('unlockCount');
   var unlockTotalEl = document.getElementById('unlockTotal');
   var resetBtn = document.getElementById('resetBtn');
+
+  var dishDetail = document.getElementById('dishDetail');
+  var ddClose = document.getElementById('ddClose');
+  var ddProduct = document.getElementById('ddProduct');
+  var ddName = document.getElementById('ddName');
+  var ddIngs = document.getElementById('ddIngs');
+  var ddDesc = document.getElementById('ddDesc');
+  var drawerHintEl = document.querySelector('.drawer-hint');
+  var drawerHintOrig = drawerHintEl ? drawerHintEl.textContent : '';
+  var drawerHintTimer = 0;
 
   var UNLOCK_KEY = 'mochi_unlocked_v1';
   var unlocked = loadUnlocked();
@@ -527,39 +609,52 @@
   }
 
   var RECIPES = [
-    { items: ['🍓', '🥛', '🍯'], product: '🍧', name: '雲朵草莓雪酪' },
-    { items: ['🍵', '🥛', '🍡'], product: '🍵', name: '月光抹茶糬糬拿鐵' },
-    { items: ['🍠', '🥛', '🍯'], product: '🍮', name: '暖呼呼地瓜布丁' },
-    { items: ['🍑', '🍵', '🍋'], product: '🧋', name: '桃桃晚霞氣泡飲' },
-    { items: ['🍌', '🥜', '🍫'], product: '🍨', name: '小糬的睡前香蕉船' },
-    { items: ['🍎', '🧀', '🍞'], product: '🥪', name: '森林散步蘋果三明治' },
-    { items: ['🍇', '🫐', '🍯'], product: '🧃', name: '星星莓果早餐汁' },
-    { items: ['🍊', '🥕', '🍯'], product: '🥕', name: '橘子太陽暖心濃湯' },
-    { items: ['🍍', '🥥', '🍚'], product: '🍚', name: '海邊椰香鳳梨飯' },
-    { items: ['🍄', '🥔', '🧈'], product: '🍲', name: '森林蘑菇奶油燉鍋' },
-    { items: ['🥚', '🧀', '🥐'], product: '🥐', name: '蓬蓬起司蛋可頌' },
-    { items: ['🍫', '🍪', '🥛'], product: '🍪', name: '睡衣派對巧克力餅乾' },
-    { items: ['🍉', '🍋', '🧊'], product: '🍹', name: '夏日西瓜月亮冰' },
-    { items: ['🍅', '🌽', '🧀'], product: '🍕', name: '彩虹小花園披薩' },
-    { items: ['🍜', '🥬', '🍄'], product: '🍜', name: '雨天抱抱蔬菜烏龍' },
-    { items: ['🍚', '🍳', '🥕'], product: '🍙', name: '小糬元氣彩虹飯糰' },
-    { items: ['🥑', '🍞', '🥚'], product: '🥑', name: '綠綠森林酪梨吐司' },
-    { items: ['🍒', '🍓', '🍦'], product: '🍨', name: '櫻桃雲朵冰淇淋' },
-    { items: ['🥞', '🍌', '🍯'], product: '🥞', name: '早安小熊蜂蜜鬆餅' },
-    { items: ['🫘', '🍫', '🥛'], product: '☕', name: '暖手可可豆豆飲' },
-    { items: ['🥕', '🥔', '🌽'], product: '🥧', name: '菜園奶奶蔬菜派' },
-    { items: ['🍐', '🍇', '🍋'], product: '🍸', name: '微風梨梨葡萄蘇打' },
-    { items: ['🥯', '🧀', '🍅'], product: '🥯', name: '番茄起司抱抱貝果' },
-    { items: ['🍋', '🍯', '🍵'], product: '🍵', name: '晚安蜂蜜檸檬茶' },
-    { items: ['🍓', '🍫', '🥐'], product: '🥐', name: '草莓巧克力迷你可頌' },
-    { items: ['🦐', '🥚', '🍚'], product: '🍤', name: '金黃月亮蝦蝦炒飯' },
-    { items: ['🥬', '🧀', '🍞'], product: '🥪', name: '綠葉起司脆脆吐司' },
-    { items: ['🍈', '🥛', '🍯'], product: '🥤', name: '密瓜綿綿奶昔' },
-    { items: ['🍜', '🥚', '🌽'], product: '🍲', name: '星星玉米蛋花湯' },
-    { items: ['🍏', '🍎', '🥣'], product: '🥣', name: '雙蘋果脆脆優格碗' },
-    { items: ['🥥', '🍌', '🍍'], product: '🍧', name: '椰香小島水果冰' },
-    { items: ['🍠', '🍡', '🍵'], product: '🍡', name: '糬糬的地瓜糰子串' }
+    { items: ['🍓', '🥛', '🍯'], product: '🍧', name: '雲朵草莓雪酪', desc: '把草莓打成雲朵般綿密，淋上蜂蜜冰鎮。酸酸甜甜，像被輕輕抱了一下。' },
+    { items: ['🍵', '🥛', '🍡'], product: '🍵', name: '月光抹茶糬糬拿鐵', desc: '抹茶與牛奶慢慢拌勻，再放進 QQ 的白玉糰子。慢慢喝，今晚就輕鬆一點。' },
+    { items: ['🍠', '🥛', '🍯'], product: '🍮', name: '暖呼呼地瓜布丁', desc: '地瓜蒸軟壓成泥，加牛奶和蜂蜜烤到微焦。暖暖的甜，肚子和心都滿足。' },
+    { items: ['🍑', '🍵', '🍋'], product: '🧋', name: '桃桃晚霞氣泡飲', desc: '水蜜桃與檸檬打底，倒進沁涼的氣泡水。像傍晚的天空，粉粉的、慢慢的。' },
+    { items: ['🍌', '🥜', '🍫'], product: '🍨', name: '小糬的睡前香蕉船', desc: '香蕉剖半，撒上花生碎、淋上巧克力。睡前的小小放縱，明天再努力就好。' },
+    { items: ['🍎', '🧀', '🍞'], product: '🥪', name: '森林散步蘋果三明治', desc: '蘋果切薄片，和起司一起夾進吐司。清爽的甜鹹，適合散步後慢慢吃。' },
+    { items: ['🍇', '🫐', '🍯'], product: '🧃', name: '星星莓果早餐汁', desc: '葡萄與藍莓打成一杯紫色銀河，加點蜂蜜。早晨喝一口，今天也輕鬆開始。' },
+    { items: ['🍊', '🥕', '🍯'], product: '🥕', name: '橘子太陽暖心濃湯', desc: '柳橙與紅蘿蔔熬成甜甜的濃湯。維他命滿滿，給你曬太陽般的溫暖。' },
+    { items: ['🍍', '🥥', '🍚'], product: '🍚', name: '海邊椰香鳳梨飯', desc: '鳳梨丁和椰香拌進熱呼呼的白飯。酸酸甜甜，一口就像吹到海邊的風。' },
+    { items: ['🍄', '🥔', '🧈'], product: '🍲', name: '森林蘑菇奶油燉鍋', desc: '蘑菇與馬鈴薯用奶油慢慢燉軟。濃濃的香氣，把疲憊一起燉化。' },
+    { items: ['🥚', '🧀', '🥐'], product: '🥐', name: '蓬蓬起司蛋可頌', desc: '可頌夾進煎蛋和融化的起司。蓬蓬的、酥酥的，咬下去元氣就來了。' },
+    { items: ['🍫', '🍪', '🥛'], product: '🍪', name: '睡衣派對巧克力餅乾', desc: '巧克力豆拌進麵糊烤成餅乾，配一杯牛奶。睡衣派對就是要甜甜的。' },
+    { items: ['🍉', '🍋', '🧊'], product: '🍹', name: '夏日西瓜月亮冰', desc: '西瓜打成汁，加檸檬和冰塊沁涼。喝一口，把夏天的熱都趕走。' },
+    { items: ['🍅', '🌽', '🧀'], product: '🍕', name: '彩虹小花園披薩', desc: '番茄、玉米和起司鋪滿餅皮烤香。五顏六色，像一座小花園。' },
+    { items: ['🍜', '🥬', '🍄'], product: '🍜', name: '雨天抱抱蔬菜烏龍', desc: '烏龍麵配上青菜與蘑菇，熱呼呼上桌。下雨天，就用一碗麵抱抱自己。' },
+    { items: ['🍚', '🍳', '🥕'], product: '🍙', name: '小糬元氣彩虹飯糰', desc: '白飯拌進煎蛋和紅蘿蔔，捏成圓圓的飯糰。帶著出門，元氣一整天。' },
+    { items: ['🥑', '🍞', '🥚'], product: '🥑', name: '綠綠森林酪梨吐司', desc: '酪梨壓成泥抹上吐司，再放一顆溏心蛋。綠綠的、飽飽的，很舒服。' },
+    { items: ['🍒', '🍓', '🍦'], product: '🍨', name: '櫻桃雲朵冰淇淋', desc: '櫻桃與草莓拌進冰淇淋，軟綿綿。像一朵雲，舔一口就溶化煩惱。' },
+    { items: ['🥞', '🍌', '🍯'], product: '🥞', name: '早安小熊蜂蜜鬆餅', desc: '鬆餅疊高高，放上香蕉淋蜂蜜。甜甜的早晨，給你一個熊抱。' },
+    { items: ['🫘', '🍫', '🥛'], product: '☕', name: '暖手可可豆豆飲', desc: '紅豆與可可煮進熱牛奶。捧著杯子，手心暖了，心也跟著暖了。' },
+    { items: ['🥕', '🥔', '🌽'], product: '🥧', name: '菜園奶奶蔬菜派', desc: '紅蘿蔔、馬鈴薯和玉米烤成鹹派。像奶奶的味道，樸實又安心。' },
+    { items: ['🍐', '🍇', '🍋'], product: '🍸', name: '微風梨梨葡萄蘇打', desc: '梨子與葡萄打成汁，加檸檬和氣泡。清爽微酸，像吹過臉頰的風。' },
+    { items: ['🥯', '🧀', '🍅'], product: '🥯', name: '番茄起司抱抱貝果', desc: '貝果夾進番茄和起司，烤到融化。酸香濃郁，一口就覺得被抱住。' },
+    { items: ['🍋', '🍯', '🍵'], product: '🍵', name: '晚安蜂蜜檸檬茶', desc: '檸檬片加蜂蜜，沖入溫熱的茶。睡前慢慢喝，跟今天說聲晚安。' },
+    { items: ['🍓', '🍫', '🥐'], product: '🥐', name: '草莓巧克力迷你可頌', desc: '可頌夾進草莓與巧克力醬。小小一個，甜得很剛好，不多不少。' },
+    { items: ['🦐', '🥚', '🍚'], product: '🍤', name: '金黃月亮蝦蝦炒飯', desc: '蝦子、雞蛋和飯用大火快炒。粒粒金黃，像一輪明月落在盤子裡。' },
+    { items: ['🥬', '🧀', '🍞'], product: '🥪', name: '綠葉起司脆脆吐司', desc: '青菜與起司夾進吐司，烤到邊邊脆脆。清爽又有飽足感。' },
+    { items: ['🍈', '🥛', '🍯'], product: '🥤', name: '密瓜綿綿奶昔', desc: '哈密瓜與牛奶打成綿密奶昔，加點蜂蜜。喝一口，心情也跟著輕鬆起來。' },
+    { items: ['🍜', '🥚', '🌽'], product: '🍲', name: '星星玉米蛋花湯', desc: '玉米熬出甜味，淋上蛋花與麵條。金黃的星星在湯裡飄，喝了很安心。' },
+    { items: ['🍏', '🍎', '🥣'], product: '🥣', name: '雙蘋果脆脆優格碗', desc: '青蘋果與蘋果切丁，拌進濃濃的優格。脆脆酸酸，清爽地開啟一天。' },
+    { items: ['🥥', '🍌', '🍍'], product: '🍧', name: '椰香小島水果冰', desc: '椰子、香蕉與鳳梨打成冰沙。熱帶的香氣，像在小島上放空。' },
+    { items: ['🍠', '🍡', '🍵'], product: '🍡', name: '糬糬的地瓜糰子串', desc: '地瓜與白玉糰子串起來，配抹茶沾著吃。QQ 軟軟，一口一個幸福。' }
   ];
+
+  // 食材 emoji → 中文名稱（食譜說明卡使用）
+  var INGR = {
+    '🍓': '草莓', '🥛': '牛奶', '🍯': '蜂蜜', '🍵': '抹茶', '🍡': '白玉糰子',
+    '🍠': '地瓜', '🍑': '水蜜桃', '🍋': '檸檬', '🍌': '香蕉', '🥜': '花生',
+    '🍫': '巧克力', '🍎': '蘋果', '🧀': '起司', '🍞': '吐司', '🍇': '葡萄',
+    '🫐': '藍莓', '🍊': '柳橙', '🥕': '紅蘿蔔', '🍍': '鳳梨', '🥥': '椰子',
+    '🍚': '白飯', '🍄': '蘑菇', '🥔': '馬鈴薯', '🧈': '奶油', '🥚': '雞蛋',
+    '🥐': '可頌', '🍪': '餅乾', '🍉': '西瓜', '🧊': '冰塊', '🍅': '番茄',
+    '🌽': '玉米', '🍜': '麵條', '🥬': '青菜', '🍳': '煎蛋', '🥑': '酪梨',
+    '🍒': '櫻桃', '🍦': '冰淇淋', '🥞': '鬆餅', '🫘': '紅豆', '🍐': '梨子',
+    '🥯': '貝果', '🦐': '蝦子', '🍏': '青蘋果', '🥣': '優格', '🍈': '哈密瓜'
+  };
 
   var CHEERS = [
     '今天的你超棒！',
@@ -755,11 +850,12 @@
   function renderDrawer() {
     drawerList.innerHTML = '';
     var count = 0;
-    RECIPES.forEach(function (r) {
+    RECIPES.forEach(function (r, i) {
       var on = !!unlocked[r.name];
       if (on) count++;
       var card = document.createElement('div');
-      card.className = 'dish' + (on ? '' : ' locked');
+      card.className = 'dish' + (on ? ' clickable' : ' locked');
+      card.setAttribute('data-index', i);
       var prod = document.createElement('div');
       prod.className = 'dish-product';
       prod.textContent = on ? r.product : '❓';
@@ -802,6 +898,65 @@
     if (drawer.classList.contains('open')) renderDrawer();
   }
 
+  function flashDrawerHint(msg) {
+    if (!drawerHintEl) return;
+    drawerHintEl.textContent = msg;
+    drawerHintEl.style.color = '#ff7aa5';
+    if (drawerHintTimer) clearTimeout(drawerHintTimer);
+    drawerHintTimer = setTimeout(function () {
+      drawerHintEl.textContent = drawerHintOrig;
+      drawerHintEl.style.color = '';
+    }, 1700);
+  }
+
+  function openDishDetail(r) {
+    ddProduct.textContent = r.product;
+    ddName.textContent = r.name;
+    ddIngs.innerHTML = '';
+    r.items.forEach(function (it) {
+      var chip = document.createElement('div');
+      chip.className = 'dd-ing';
+      var em = document.createElement('span');
+      em.className = 'dd-ing-emoji';
+      em.textContent = it;
+      var nm = document.createElement('span');
+      nm.className = 'dd-ing-name';
+      nm.textContent = INGR[it] || '神秘食材';
+      chip.appendChild(em);
+      chip.appendChild(nm);
+      ddIngs.appendChild(chip);
+    });
+    ddDesc.textContent = r.desc || '';
+    dishDetail.classList.remove('hidden');
+    dishDetail.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeDishDetail() {
+    dishDetail.classList.add('hidden');
+    dishDetail.setAttribute('aria-hidden', 'true');
+  }
+
+  function onDishCardClick(e) {
+    var node = e.target;
+    var card = null;
+    while (node && node !== drawerList) {
+      if (node.classList && node.classList.contains('dish')) { card = node; break; }
+      node = node.parentNode;
+    }
+    if (!card) return;
+    var idx = parseInt(card.getAttribute('data-index'), 10);
+    var r = RECIPES[idx];
+    if (!r) return;
+    if (unlocked[r.name]) {
+      openDishDetail(r);
+    } else {
+      card.classList.remove('shake');
+      void card.offsetWidth; // 重新觸發動畫
+      card.classList.add('shake');
+      flashDrawerHint('還沒解鎖哦～先餵小糬吃看看！');
+    }
+  }
+
   var resetArmed = false;
   var resetTimer = 0;
 
@@ -813,6 +968,7 @@
   }
 
   function doReset() {
+    closeDishDetail();
     try {
       localStorage.removeItem(UNLOCK_KEY);
       localStorage.removeItem(BOND_KEY);
@@ -1035,8 +1191,16 @@
   drawerClose.addEventListener('click', closeDrawer);
   drawerMask.addEventListener('click', closeDrawer);
   resetBtn.addEventListener('click', onResetClick);
+  drawerList.addEventListener('click', onDishCardClick);
+  ddClose.addEventListener('click', closeDishDetail);
+  dishDetail.addEventListener('click', function (e) {
+    if (e.target === dishDetail) closeDishDetail();
+  });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeDrawer();
+    if (e.key === 'Escape') {
+      if (!dishDetail.classList.contains('hidden')) { closeDishDetail(); return; }
+      closeDrawer();
+    }
   });
 
   var resizeTimer = 0;
