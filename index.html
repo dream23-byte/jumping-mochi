@@ -765,9 +765,9 @@
   function now() { return performance.now(); }
 
   function baseStateForBond() {
-    if (bond >= 10) return 'love';
-    if (bond >= 6) return 'joy';
-    if (bond >= 3) return 'happy';
+    if (bond >= 35) return 'love';
+    if (bond >= 15) return 'joy';
+    if (bond >= 5) return 'happy';
     return 'normal';
   }
   function renderFace() { mochiBody.className = 'body f-' + faceState; }
