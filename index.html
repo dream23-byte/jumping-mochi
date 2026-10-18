@@ -970,7 +970,13 @@
     if (unlocked[r.name] && newSet[r.name]) {
       newSet[r.name] = false;
       saveNewSet();
-      renderDrawer();
+      var card = drawerList.querySelector('.dish[data-index="' + idx + '"] .dish-new');
+      if (card) {
+        card.classList.add('fadeout');
+        setTimeout(function(){ renderDrawer(); }, 650);
+      } else {
+        renderDrawer();
+      }
     }
     dishDetail.classList.remove('hidden');
     dishDetail.setAttribute('aria-hidden', 'false');
