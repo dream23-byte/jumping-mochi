@@ -973,7 +973,7 @@
     }
     dishDetail.classList.remove('hidden');
     dishDetail.setAttribute('aria-hidden', 'false');
-    renderDrawer();
+    setTimeout(function(){ renderDrawer(); }, 50);
   }
 
   function closeDishDetail() {
