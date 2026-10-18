@@ -124,6 +124,15 @@
     60% { transform: translateX(-3px); }
     80% { transform: translateX(3px); }
   }
+  .dish { position: relative; }
+  .dish-new {
+    position: absolute; top: 6px; right: 6px;
+    font-size: 9px; font-weight: 900; letter-spacing: .5px;
+    color: #fff; background: linear-gradient(180deg, #ff9dbb 0%, #ff7aa5 100%);
+    padding: 2px 6px; border-radius: 999px; box-shadow: 0 2px 0 #e2568a;
+  }
+  .dish-new.fadeout { animation: fadeOut .6s forwards; }
+  @keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
 
   #stage {
     position: relative;
@@ -396,6 +405,8 @@
   #feedBtn:hover:not(:disabled) { filter: brightness(1.05); }
   #feedBtn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 #e2568a; }
   #feedBtn:disabled { filter: grayscale(.25) brightness(.98); cursor: default; }
+  @keyframes btnPop { 0%{transform:scale(.98)} 40%{transform:scale(1.05)} 70%{transform:scale(.995)} 100%{transform:scale(1)} }
+  #feedBtn.pulse, #ddClose.pulse, #menuBtn.pulse, #drawerClose.pulse { animation: btnPop .4s ease-out; }
 
   /* ---------- dish detail (食譜說明卡) ---------- */
   #dishDetail {
@@ -565,6 +576,8 @@
   var drawerHintEl = document.querySelector('.drawer-hint');
   var drawerHintOrig = drawerHintEl ? drawerHintEl.textContent : '';
   var drawerHintTimer = 0;
+  var NEW_KEY = 'mochi_new_v1';
+  var newSet = loadNewSet();
 
   var UNLOCK_KEY = 'mochi_unlocked_v1';
   var unlocked = loadUnlocked();
@@ -592,6 +605,24 @@
     var n = 0;
     for (var k in unlocked) { if (unlocked.hasOwnProperty(k)) n++; }
     return n;
+  }
+
+  function loadNewSet() {
+    try {
+      var s = localStorage.getItem(NEW_KEY);
+      if (!s) return {};
+      var arr = JSON.parse(s);
+      var o = {};
+      for (var i = 0; i < arr.length; i++) if (arr[i]) o[arr[i]] = true;
+      return o;
+    } catch (e) { return {}; }
+  }
+  function saveNewSet() {
+    try {
+      var arr = [];
+      for (var k in newSet) { if (newSet.hasOwnProperty(k)) arr.push(k); }
+      localStorage.setItem(NEW_KEY, JSON.stringify(arr));
+    } catch (e) { }
   }
 
   var BOND_KEY = 'mochi_bond_v1';
@@ -856,6 +887,13 @@
       var card = document.createElement('div');
       card.className = 'dish' + (on ? ' clickable' : ' locked');
       card.setAttribute('data-index', i);
+      var isNew = on && !newSet[r.name];
+      if (isNew) {
+        var nb = document.createElement('span');
+        nb.className = 'dish-new';
+        nb.textContent = 'NEW';
+        card.appendChild(nb);
+      }
       var prod = document.createElement('div');
       prod.className = 'dish-product';
       prod.textContent = on ? r.product : '❓';
@@ -894,7 +932,9 @@
   function unlockDish(name) {
     if (!name || unlocked[name]) return;
     unlocked[name] = true;
+    newSet[name] = true;
     saveUnlocked();
+    saveNewSet();
     if (drawer.classList.contains('open')) renderDrawer();
   }
 
@@ -927,6 +967,11 @@
       ddIngs.appendChild(chip);
     });
     ddDesc.textContent = r.desc || '';
+    if (unlocked[r.name] && newSet[r.name]) {
+      newSet[r.name] = false;
+      saveNewSet();
+      renderDrawer();
+    }
     dishDetail.classList.remove('hidden');
     dishDetail.setAttribute('aria-hidden', 'false');
   }
@@ -972,8 +1017,10 @@
     try {
       localStorage.removeItem(UNLOCK_KEY);
       localStorage.removeItem(BOND_KEY);
+      localStorage.removeItem(NEW_KEY);
     } catch (e) { }
     unlocked = {};
+    newSet = {};
     bond = 0;
     bondVal.textContent = bond;
     setFace(baseStateForBond());
@@ -1195,6 +1242,18 @@
   ddClose.addEventListener('click', closeDishDetail);
   dishDetail.addEventListener('click', function (e) {
     if (e.target === dishDetail) closeDishDetail();
+  });
+  ddClose.addEventListener('mousedown', function(){
+    ddClose.classList.add('pulse');
+    setTimeout(function(){ ddClose.classList.remove('pulse'); }, 400);
+  });
+  menuBtn.addEventListener('mousedown', function(){
+    menuBtn.classList.add('pulse');
+    setTimeout(function(){ menuBtn.classList.remove('pulse'); }, 400);
+  });
+  drawerClose.addEventListener('mousedown', function(){
+    drawerClose.classList.add('pulse');
+    setTimeout(function(){ drawerClose.classList.remove('pulse'); }, 400);
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
