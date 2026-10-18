@@ -967,14 +967,17 @@
       ddIngs.appendChild(chip);
     });
     ddDesc.textContent = r.desc || '';
-    if (unlocked[r.name] && newSet[r.name]) {
+    var wasNew = unlocked[r.name] && newSet[r.name];
+    if (wasNew) {
       newSet[r.name] = false;
       saveNewSet();
-      renderDrawer();
     }
     dishDetail.classList.remove('hidden');
     dishDetail.setAttribute('aria-hidden', 'false');
     renderDrawer();
+    if (wasNew) {
+      setTimeout(function(){ renderDrawer(); }, 0);
+    }
   }
 
   function closeDishDetail() {
