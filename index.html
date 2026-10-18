@@ -973,11 +973,12 @@
     if (unlocked[r.name] && newSet[r.name]) {
       newSet[r.name] = false;
       saveNewSet();
+      renderDrawer();
+      return;
     }
     dishDetail.classList.remove('hidden');
     dishDetail.setAttribute('aria-hidden', 'false');
     renderDrawer();
-  }
   }
 
   function closeDishDetail() {
