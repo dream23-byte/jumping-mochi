@@ -968,12 +968,15 @@
     });
     ddDesc.textContent = r.desc || '';
 
-    dishDetail.classList.remove('hidden');
-    dishDetail.setAttribute('aria-hidden', 'false');
-    if (unlocked[r.name] && newSet[r.name]) {
+    var isNewNow = unlocked[r.name] && newSet[r.name];
+    if (isNewNow) {
       newSet[r.name] = false;
       saveNewSet();
       renderDrawer();
+      setTimeout(function () {
+        dishDetail.classList.remove('hidden');
+        dishDetail.setAttribute('aria-hidden', 'false');
+      }, 16);
       return;
     }
     dishDetail.classList.remove('hidden');
