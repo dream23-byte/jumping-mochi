@@ -887,7 +887,7 @@
       var card = document.createElement('div');
       card.className = 'dish' + (on ? ' clickable' : ' locked');
       card.setAttribute('data-index', i);
-      var isNew = on && !newSet[r.name];
+      var isNew = on && newSet[r.name];
       if (isNew) {
         var nb = document.createElement('span');
         nb.className = 'dish-new';
