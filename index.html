@@ -970,9 +970,14 @@
     if (unlocked[r.name] && newSet[r.name]) {
       newSet[r.name] = false;
       saveNewSet();
-      var card = drawerList.querySelector('.dish[data-index="' + idx + '"] .dish-new');
-      if (card) {
-        card.classList.add('fadeout');
+      var cards = drawerList.querySelectorAll('.dish[data-index="' + idx + '"]');
+      var nb = null;
+      for (var ni=0; ni<cards.length; ni++) {
+        nb = cards[ni].querySelector('.dish-new');
+        if (nb) break;
+      }
+      if (nb) {
+        nb.classList.add('fadeout');
         setTimeout(function(){ renderDrawer(); }, 650);
       } else {
         renderDrawer();
