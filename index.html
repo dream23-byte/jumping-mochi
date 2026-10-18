@@ -973,8 +973,11 @@
     }
     dishDetail.classList.remove('hidden');
     dishDetail.setAttribute('aria-hidden', 'false');
-    setTimeout(function(){ renderDrawer(); }, 10);
-  }
+    if (unlocked[r.name] && newSet[r.name]) {
+      setTimeout(function(){ renderDrawer(); }, 5);
+    } else {
+      renderDrawer();
+    }
   }
 
   function closeDishDetail() {
