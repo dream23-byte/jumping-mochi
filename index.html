@@ -967,14 +967,16 @@
       ddIngs.appendChild(chip);
     });
     ddDesc.textContent = r.desc || '';
+
+    dishDetail.classList.remove('hidden');
+    dishDetail.setAttribute('aria-hidden', 'false');
+    if (unlocked[r.name] && !newSet[r.name]) {
+      // already cleared? no, just render
+    }
     if (unlocked[r.name] && newSet[r.name]) {
       newSet[r.name] = false;
       saveNewSet();
-    }
-    dishDetail.classList.remove('hidden');
-    dishDetail.setAttribute('aria-hidden', 'false');
-    if (unlocked[r.name] && newSet[r.name]) {
-      setTimeout(function(){ renderDrawer(); }, 5);
+      setTimeout(function(){ renderDrawer(); }, 50);
     } else {
       renderDrawer();
     }
