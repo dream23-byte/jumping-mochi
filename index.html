@@ -973,15 +973,9 @@
       newSet[r.name] = false;
       saveNewSet();
       renderDrawer();
-      setTimeout(function () {
-        dishDetail.classList.remove('hidden');
-        dishDetail.setAttribute('aria-hidden', 'false');
-      }, 16);
-      return;
     }
     dishDetail.classList.remove('hidden');
     dishDetail.setAttribute('aria-hidden', 'false');
-    renderDrawer();
   }
 
   function closeDishDetail() {
